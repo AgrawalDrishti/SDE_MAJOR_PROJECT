@@ -22,15 +22,14 @@ io.on("connection", (socket) => {
         console.log(`A client disconnected ${socket.id}`)
     })
 
-    socket.on("addTopic", (topic) => {
+    socket.on("addTopic", (topic, callback) => {
         topics.push(topic)
         messages[topic] = []
-        console.log(`Added topic ${topic}`)
+        callback("Topic added")
     })
 
     socket.on("publish", (topic, message,callback) => {
         messages[topic].push(message)
-        console.log(`Published message to ${topic}`)
         callback("Message published")
     })
 
