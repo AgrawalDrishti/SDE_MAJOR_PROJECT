@@ -7,7 +7,7 @@ setInterval(() => {
         if (err) {
             console.error(err)
         } else {
-            console.log(message)
+            console.log('topic1',message)
         }
     })
 }, 6000);
@@ -17,7 +17,7 @@ setInterval(() => {
         if (err) {
             console.error(err)
         } else {
-            console.log(message)
+            console.log('topic2',message)
         }
     })
 }, 6000);

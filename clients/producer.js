@@ -1,7 +1,11 @@
 const { io } = require('socket.io-client')
+const axios = require('axios')
 
 const socket = io('http://localhost:3000')
 socket.connect()
+
+const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+// TO DO: Implement the remaining producer logic
 
 function getRandomString(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -13,7 +17,6 @@ function getRandomString(length) {
     return result;
 }
 
-
 function logger(err, res){
     if (err){
         console.error(err)
@@ -22,9 +25,6 @@ function logger(err, res){
         console.log(res)
     }
 }
-
-socket.emit('addTopic', 'topic1', (err, res) => logger(err, res))
-socket.emit('addTopic', 'topic2', (err, res) => logger(err, res))
 
 
 setInterval(() => {

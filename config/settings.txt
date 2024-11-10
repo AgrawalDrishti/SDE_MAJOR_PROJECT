@@ -1,0 +1,8 @@
+producers can publish to some topics
+
+kafka-topics can be used to add topics, currently to a single broker
+
+brokers are able to run in parallel and can serve for specific topics
+
+consumers can consume the messages for the topics they need
+
