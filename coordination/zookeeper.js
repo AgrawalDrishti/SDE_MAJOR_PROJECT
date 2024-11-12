@@ -5,6 +5,7 @@ const app = express()
 app.use(express.json())
 
 const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
+const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
 const TopicBrokerMap = {}
 
 app.get("/",
@@ -23,5 +24,5 @@ app.post("/addEntry", (req,res) => {
 })
 
 app.listen(ZOOKEEPER_PORT, () => {
-    console.log(`Zookeeper running at http://localhost:${ZOOKEEPER_PORT}`);
+    console.log(`Zookeeper running at ${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}`);
 })

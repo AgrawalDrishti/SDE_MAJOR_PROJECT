@@ -4,6 +4,7 @@ const readline = require('readline')
 
 const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 const rl = readline.createInterface({input: process.stdin,output: process.stdout});
+const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
 var topics = [];
 var mapping = {};
 
@@ -55,7 +56,7 @@ rl.question("Enter the number of topics you want this producer to publish to:",n
 
 rl.on('close', async () => {
     console.log("Topics:",topics);
-    await axios.get(`http://localhost:${ZOOKEEPER_PORT}/getMapping`)
+    await axios.get(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/getMapping`)
     .then((result) => {
         const full_mapping = result.data.mapping;
         Object.keys(full_mapping).forEach((topic) => {
