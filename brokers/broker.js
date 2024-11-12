@@ -24,8 +24,8 @@ io.on("connection", (socket) => {
     socket.on("disconnect", () => {
         console.log(`A client disconnected ${socket.id}`)
     })
-
-    socket.on("publish", (topic, message,callback) => {
+    
+    socket.on("publish", (topic, message, callback) => {
         messages[topic].push(message)
         callback("Message published")
     })

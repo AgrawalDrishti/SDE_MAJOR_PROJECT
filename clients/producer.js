@@ -1,11 +1,11 @@
 const { io } = require('socket.io-client')
 const axios = require('axios')
+const readline = require('readline')
 
-const socket = io('http://localhost:3000')
-socket.connect()
-
+const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 const rl = readline.createInterface({input: process.stdin,output: process.stdout});
-// TO DO: Implement the remaining producer logic
+var topics = [];
+var mapping = {};
 
 function getRandomString(length) {
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -26,13 +26,48 @@ function logger(err, res){
     }
 }
 
+function startPublishing(topic, broker){
+    const socket = io(broker);
+    socket.connect();
 
-setInterval(() => {
-    const randomMessage = getRandomString(10);
-    socket.emit('publish', 'topic1', randomMessage, (err, res) => logger(err,res));
-}, 5000);
+    setInterval(() => {
+        socket.emit('publish',topic,getRandomString(10), (err, res) => logger(err,res));
+    }, 5000);
+}
 
-setInterval(() => {
-    const randomMessage = getRandomString(10);
-    socket.emit('publish', 'topic2', randomMessage, (err, res) => logger(err,res));
-}, 3000);
+
+rl.question("Enter the number of topics you want this producer to publish to:",num_topics => {
+    let topic_i = 0;
+    const getTopic = () => {
+        if (topic_i < num_topics) {
+            rl.question(`Enter the name of topic ${topic_i}: `, topic => {
+                topics.push(topic);
+                topic_i++;
+                getTopic();
+            })
+        } else {
+            rl.close();
+        }
+    }
+
+    getTopic();
+})
+
+rl.on('close', async () => {
+    console.log("Topics:",topics);
+    await axios.get(`http://localhost:${ZOOKEEPER_PORT}/getMapping`)
+    .then((result) => {
+        const full_mapping = result.data.mapping;
+        Object.keys(full_mapping).forEach((topic) => {
+            if (topics.includes(topic)){
+                mapping[topic] = full_mapping[topic];
+            }
+        })
+    }).catch((err) => {
+        console.error(err);
+    });
+
+    topics.forEach((topic) => {
+        startPublishing(topic,mapping[topic]);
+    })
+})

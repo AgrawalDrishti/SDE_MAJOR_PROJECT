@@ -17,5 +17,6 @@ for(let i=0; i<num_brokers; i++){
         }
         console.log(stdout);
     });
-
+    
+    console.log("broker at port",port,"initiated");
 }

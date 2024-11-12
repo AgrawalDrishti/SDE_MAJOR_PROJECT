@@ -3,22 +3,22 @@ const socket = io('http://localhost:3000')
 socket.connect()
 
 setInterval(() => {
-    socket.emit('consumeTopic', 'topic1', (err, message) => {
+    socket.emit('consumeTopic', 'anadi', (err, message) => {
         if (err) {
             console.error(err)
         } else {
             console.log('topic1',message)
         }
     })
-}, 6000);
+}, 5000);
 
 setInterval(() => {
-    socket.emit('consumeTopic', 'topic2', (err, message) => {
+    socket.emit('consumeTopic', 'sharma', (err, message) => {
         if (err) {
             console.error(err)
         } else {
             console.log('topic2',message)
         }
     })
-}, 6000);
+}, 5000);
 
