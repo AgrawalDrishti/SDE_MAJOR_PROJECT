@@ -7,6 +7,7 @@ function create_message_file(dir, fileName, content = '') {
     fs.writeFile(filePath, content, (err) => {
         if (err) {
             console.error(`Error creating file: ${err}`);
+            throw err;
         } else {
             console.log(`File created successfully at ${filePath}`);
         }
@@ -18,7 +19,7 @@ function read_message_file(dir, fileName, startpos) {
     fs.open(filePath, 'r', (err, fd) => {
         if (err) {
             console.error(`Error opening file: ${err}`);
-            return;
+            throw err;
         }
 
         const buffer = Buffer.alloc(1024);
@@ -43,9 +44,28 @@ function read_message_file(dir, fileName, startpos) {
                 }
             });
 
-            return startpos + stopIndex;
+            return;
         });
     });
 }
 
-module.exports = { create_message_file , read_message_file }
+function create_message_directory(dir) {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir);
+        console.log(`Directory created at ${dir}`);
+    } else {
+        console.log(`Directory already exists at ${dir}`);
+    }
+}
+
+function add_message_to_file(dir, fileName, content) {
+    const filePath = path.join(dir, fileName);
+    fs.appendFile(filePath, content+"\n", (err) => {
+        if (err) {
+            console.error(`Error appending to file: ${err}`);
+            throw err;
+        }
+    });
+}
+
+module.exports = { create_message_file , read_message_file , add_message_to_file , create_message_directory }
