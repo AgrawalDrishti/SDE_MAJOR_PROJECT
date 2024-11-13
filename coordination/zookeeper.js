@@ -1,10 +1,12 @@
 require('dotenv').config()
-const axios = require('axios')
 const express = require("express")
 const { Mutex } = require('async-mutex')
+const cors = require('cors');
+const axios = require('axios')
 
 const app = express()
 app.use(express.json())
+app.use(cors());
 
 const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
@@ -13,11 +15,9 @@ const TopicBrokerMap = {};
 const mutex = new Mutex();
 var broker_i = 0;
 var brokers = [];
-
 app.get("/",
     (req,res) => res.send({message:`Zookeeper running at ${ZOOKEEPER_PORT}`})
 )
-
 app.get("/getMapping",
     (req,res) => res.send({mapping:TopicBrokerMap})
 )
@@ -47,9 +47,25 @@ app.post("/addEntry", async (req,res) => {
     })
 })
 
+app.delete("/removeEntry", (req,res) => {
+    try {
+        console.log("Removing topic:",req.body.topic);
+        if (TopicBrokerMap[req.body.topic]) {
+            delete TopicBrokerMap[req.body.topic];
+            res.status(200).send({message:"Successfully removed the topic!"})
+        } else {
+            res.status(404).send({Error:"Topic not found!"});
+        }
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({Error:"Error removing the topic"+err});
+    }
+})
+
 app.post("/addBroker", async (req,res) => {
     try {
-        const broker_url = req.data.broker_url;
+        const broker_url = req.body.broker_url;
+        console.log("Adding a broker:", broker_url);
         brokers.push(broker_url);
         return res.status(200).send({message:"Successfully registered the broker at Zookeeper!"});
     } catch (err) {

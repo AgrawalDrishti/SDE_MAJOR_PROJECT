@@ -25,9 +25,13 @@ const topics = []
 server.listen(PORT, () => {
     console.log(`Server listening at http://localhost:${PORT}`);
     fh.create_message_directory(`${MESSAGE_DIRECTORY}/BROKER${PORT}`);
-    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}`, {
-        broker_url:`${BROKER_HOST}:${PORT}/addBroker`
-    });
+    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/addBroker`, {
+        broker_url:`${BROKER_HOST}:${PORT}`
+    }).then((result) => {
+        console.log(result.data);
+    }).catch((err) => {
+        console.error(err);
+    });;
 })
 
 io.on("connection", (socket) => {
