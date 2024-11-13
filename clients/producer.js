@@ -32,7 +32,7 @@ function startPublishing(topic, broker){
     socket.connect();
 
     setInterval(() => {
-        socket.emit('publish',topic,getRandomString(10), (err, res) => logger(err,res));
+        socket.emit('publish',topic,topic+getRandomString(10), (err, res) => logger(err,res));
     }, 5000);
 }
 

@@ -25,14 +25,13 @@ function startConsuming(topic, broker){
         consumedLength[topic] = 0;
     }
     setInterval( async () => {
-        console.log(consumedLength[topic]);
         socket.emit('consumeTopic', [topic, consumedLength[topic]], (err, res) => {
             if (err){
                 console.error(err);
             } else {
                 try {
                     const result = res;
-                    console.log(result,"hello---");
+                    console.log(result);
                     if (Array.isArray(result) || typeof result === 'string') {
                         consumedLength[topic] += result.length + 1;
                     } else {

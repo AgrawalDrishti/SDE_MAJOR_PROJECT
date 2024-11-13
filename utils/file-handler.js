@@ -24,15 +24,15 @@ async function read_message_file (dir, fileName, startpos) {
         const { bytesRead } = await fd.read(buffer, 0, buffer.length, parseInt(startpos));
         
         let content = buffer.toString('utf8', 0, bytesRead);
-        let stopIndex = content.indexOf('\n'); // Change '\n' to the character you want to stop at
-        result = content;
+        let stopIndex = content.indexOf('\n');
 
         if (stopIndex !== -1) {
             content = content.substring(0, stopIndex);
         } else {
             stopIndex = bytesRead;
         }
-
+        
+        result = content;
         await fd.close();
     } catch (err) {
         console.error(`Error handling file: ${err}`);
