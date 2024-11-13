@@ -18,8 +18,8 @@ function logger(err, res){
     }
 }
 
-function startConsuming(topic, broker){
-    const socket = io(broker);
+async function startConsuming(topic){
+    const socket = io(mapping[topic]);
     socket.connect();
     if (!consumedLength[topic]) {
         consumedLength[topic] = 0;
@@ -43,6 +43,13 @@ function startConsuming(topic, broker){
             }
         });
     }, 5000);
+
+    socket.on('disconnect', async () => {
+        console.log('Lost connection to broker');
+        const res = await axios.get(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/getBroker`);
+        mapping[topic] = res.data.broker;
+        startConsuming(topic);
+    });
 }
 
 rl.question("Enter the number of topics you want to consume :",num_topics => {
@@ -77,6 +84,6 @@ rl.on('close', async () => {
     });
     console.log("Mapping:",mapping);
     topics.forEach((topic) => {
-        startConsuming(topic,mapping[topic]);
+        startConsuming(topic);
     })
 })

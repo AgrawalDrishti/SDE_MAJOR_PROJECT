@@ -1,27 +1,33 @@
 require('dotenv').config()
 const express = require("express")
-const app = express()
 const axios = require('axios')
-const fh = require('../utils/file-handler');
+const fh = require('./file-functions/file-handler');
 const cors = require('cors');
+const http = require("http")
+const { Server } = require("socket.io")
 
+const app = express()
 app.use(express.json())
 app.use(cors());
 
-const http = require("http")
 const server = http.createServer(app)
-
-const { Server } = require("socket.io")
 const io = new Server(server)
 
-const port = process.argv[2];
 const MESSAGE_DIRECTORY = process.env.MESSAGE_DIRECTORY || "./brokers/messages";
+const BROKER_HOST = process.env.BROKER_HOST || 'http://localhost';
+const PORT = process.argv[2];
+const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
+const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
+
 const messages = {}
 const topics = []
 
-server.listen(port, () => {
-    console.log(`Server listening at http://localhost:${port}`);
-    fh.create_message_directory(`${MESSAGE_DIRECTORY}/BROKER${port}`);
+server.listen(PORT, () => {
+    console.log(`Server listening at http://localhost:${PORT}`);
+    fh.create_message_directory(`${MESSAGE_DIRECTORY}/BROKER${PORT}`);
+    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}`, {
+        broker_url:`${BROKER_HOST}:${PORT}/addBroker`
+    });
 })
 
 io.on("connection", (socket) => {
@@ -33,14 +39,14 @@ io.on("connection", (socket) => {
     
     socket.on("publish", (topic, message, callback) => {
         messages[topic].push(message);
-        fh.add_message_to_file(`${MESSAGE_DIRECTORY}/BROKER${port}`, `${topic}.txt`, message);
+        fh.add_message_to_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${topic}.txt`, message);
         callback("Message published");
     })
 
     socket.on("consumeTopic", async (topic, callback) => {
         if (topics.includes(topic[0])) {
             try {
-                const res = await fh.read_message_file(`${MESSAGE_DIRECTORY}/BROKER${port}`, `${topic[0]}.txt`, topic[1]);
+                const res = await fh.read_message_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${topic[0]}.txt`, topic[1]);
                 callback(null, String(res));
             } catch (err) {
                 callback("Error reading message file");
@@ -52,7 +58,7 @@ io.on("connection", (socket) => {
 })
 
 app.get("/", 
-    (req,res) => res.send({message:`Broker running at ${port}`})
+    (req,res) => res.send({message:`Broker running at ${PORT}`})
 )
 
 app.get("/topics", 
@@ -64,7 +70,7 @@ app.post("/addTopic", (req,res) => {
     messages[reqTopic] = [];
     topics.push(reqTopic);
     try {
-        fh.create_message_file(`${MESSAGE_DIRECTORY}/BROKER${port}`, `${reqTopic}.txt`);
+        fh.create_message_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${reqTopic}.txt`);
         return res.status(200).send({message:"Topic added"});
     } catch (err) {
         console.error(err);

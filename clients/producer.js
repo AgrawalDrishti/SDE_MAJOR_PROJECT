@@ -27,13 +27,20 @@ function logger(err, res){
     }
 }
 
-function startPublishing(topic, broker){
-    const socket = io(broker);
+function startPublishing(topic){
+    const socket = io(mapping[topic]);
     socket.connect();
 
     setInterval(() => {
         socket.emit('publish',topic,topic+getRandomString(10), (err, res) => logger(err,res));
     }, 5000);
+
+    socket.on('disconnect', async () => {
+        console.log('Lost connection to broker');
+        const res = await axios.get(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/getBroker`);
+        mapping[topic] = res.data.broker;
+        startConsuming(topic);
+    });
 }
 
 
