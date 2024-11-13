@@ -14,39 +14,32 @@ function create_message_file(dir, fileName, content = '') {
     });
 }
 
-function read_message_file(dir, fileName, startpos) {
+async function read_message_file (dir, fileName, startpos) {
     const filePath = path.join(dir, fileName);
-    fs.open(filePath, 'r', (err, fd) => {
-        if (err) {
-            console.error(`Error opening file: ${err}`);
-            throw err;
+    let result;
+
+    try {
+        const fd = await fs.promises.open(filePath, 'r');
+        const buffer = Buffer.alloc(1024);
+        const { bytesRead } = await fd.read(buffer, 0, buffer.length, parseInt(startpos));
+        
+        let content = buffer.toString('utf8', 0, bytesRead);
+        let stopIndex = content.indexOf('\n'); // Change '\n' to the character you want to stop at
+        result = content;
+
+        if (stopIndex !== -1) {
+            content = content.substring(0, stopIndex);
+        } else {
+            stopIndex = bytesRead;
         }
 
-        const buffer = Buffer.alloc(1024);
-        fs.read(fd, buffer, 0, buffer.length, startpos, (err, bytesRead, buffer) => {
-            if (err) {
-                console.error(`Error reading file: ${err}`);
-                return;
-            }
-
-            let content = buffer.toString('utf8', 0, bytesRead);
-            let stopIndex = content.indexOf('\n'); // Change '\n' to the character you want to stop at
-            if (stopIndex !== -1) {
-                content = content.substring(0, stopIndex);
-            } else {
-                stopIndex = bytesRead;
-            }
-
-            console.log(`File content: ${content}`);
-            fs.close(fd, (err) => {
-                if (err) {
-                    console.error(`Error closing file: ${err}`);
-                }
-            });
-
-            return;
-        });
-    });
+        await fd.close();
+    } catch (err) {
+        console.error(`Error handling file: ${err}`);
+        throw err;
+    }
+    console.log("Result:", result);
+    return result;
 }
 
 function create_message_directory(dir) {

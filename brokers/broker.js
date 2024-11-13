@@ -3,8 +3,10 @@ const express = require("express")
 const app = express()
 const axios = require('axios')
 const fh = require('../utils/file-handler');
+const cors = require('cors');
 
 app.use(express.json())
+app.use(cors());
 
 const http = require("http")
 const server = http.createServer(app)
@@ -35,9 +37,14 @@ io.on("connection", (socket) => {
         callback("Message published");
     })
 
-    socket.on("consumeTopic", (topic, callback) => {
-        if (topics.includes(topic) && messages[topic].length > 0) {
-            callback(null, messages[topic].shift());
+    socket.on("consumeTopic", async (topic, callback) => {
+        if (topics.includes(topic[0])) {
+            try {
+                const res = await fh.read_message_file(`${MESSAGE_DIRECTORY}/BROKER${port}`, `${topic[0]}.txt`, topic[1]);
+                callback(null, String(res));
+            } catch (err) {
+                callback("Error reading message file");
+            }
         } else {
             callback("No messages");
         }
