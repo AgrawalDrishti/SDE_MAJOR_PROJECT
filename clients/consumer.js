@@ -1,13 +1,13 @@
+require('dotenv').config()
 const {io} = require('socket.io-client')
 const axios = require('axios')
 const readline = require('readline')
-const socket = io('http://localhost:3000')
 const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 const rl = readline.createInterface({input: process.stdin,output: process.stdout});
 const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
 var topics = [];
 var mapping = {};
-var cosumedLength = {};
+var consumedLength = {};
 
 function logger(err, res){
     if (err){
@@ -21,17 +21,26 @@ function logger(err, res){
 function startConsuming(topic, broker){
     const socket = io(broker);
     socket.connect();
-
-    setInterval(() => {
-        socket.emit('consumeTopic', topic, (err, res) => {
-            if (err) {
-                logger(err, null);
+    if (!consumedLength[topic]) {
+        consumedLength[topic] = 0;
+    }
+    setInterval( async () => {
+        console.log(consumedLength[topic]);
+        socket.emit('consumeTopic', [topic, consumedLength[topic]], (err, res) => {
+            if (err){
+                console.error(err);
             } else {
-                logger(null, res);
-                if (!cosumedLength[topic]) {
-                    cosumedLength[topic] = 0;
+                try {
+                    const result = res;
+                    console.log(result,"hello---");
+                    if (Array.isArray(result) || typeof result === 'string') {
+                        consumedLength[topic] += result.length + 1;
+                    } else {
+                        console.error('Unexpected response format:', result);
+                    }
+                } catch (error) {
+                    console.error('Error processing response:', error);
                 }
-                cosumedLength[topic] += res.length + 1; 
             }
         });
     }, 5000);
@@ -67,7 +76,7 @@ rl.on('close', async () => {
     }).catch((err) => {
         console.error(err);
     });
-
+    console.log("Mapping:",mapping);
     topics.forEach((topic) => {
         startConsuming(topic,mapping[topic]);
     })
