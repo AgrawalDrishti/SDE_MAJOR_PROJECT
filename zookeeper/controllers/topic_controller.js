@@ -1,6 +1,5 @@
 const axios = require('axios');
 
-
 const add_topic_to_broker = async (req,res) => {
     const topic = req.body.topic;
     const release = await mutex.acquire();
