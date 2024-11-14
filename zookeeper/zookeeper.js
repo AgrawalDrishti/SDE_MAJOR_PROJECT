@@ -19,6 +19,10 @@ app.get("/getMapping",
     (req,res) => res.status(200).send({mapping:TopicLeaderBrokerMap})
 )
 
+app.get("/getFollowers",
+    (req,res) => res.status(200).send({mapping:TopicFollowerBrokersMap})
+)
+
 app.listen(ZOOKEEPER_PORT, () => {
     global.REPLICA_FACTOR = process.env.REPLICA_FACTOR || 2;
 

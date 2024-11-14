@@ -19,13 +19,13 @@ const PORT = process.argv[2];
 const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
 const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 
-const messages = {}
-const topics = []
+const topics = [];
+const TopicFollowerBrokerMap = {};
 
 server.listen(PORT, () => {
     console.log(`Server listening at http://localhost:${PORT}`);
     fh.create_message_directory(`${MESSAGE_DIRECTORY}/BROKER${PORT}`);
-    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/addBroker`, {
+    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/broker/add`, {
         broker_url:`${BROKER_HOST}:${PORT}`
     }).then((result) => {
         console.log(result.data);
@@ -43,7 +43,6 @@ io.on("connection", (socket) => {
     })
     
     socket.on("publish", (topic, message, callback) => {
-        messages[topic].push(message);
         fh.add_message_to_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${topic}.txt`, message);
         callback("Message published");
     })
@@ -63,16 +62,15 @@ io.on("connection", (socket) => {
 })
 
 app.get("/", 
-    (req,res) => res.send({message:`Broker running at ${PORT}`})
+    (req,res) => res.status(200).send({message:`Broker running at ${PORT}`})
 )
 
 app.get("/topics", 
-    (req,res) => res.send({topics:topics})
+    (req,res) => res.status(200).send({topics:topics})
 )
 
 app.post("/addTopic", (req,res) => {
     const reqTopic = req.body.topic;
-    messages[reqTopic] = [];
     topics.push(reqTopic);
     try {
         fh.create_message_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${reqTopic}.txt`);
@@ -80,5 +78,39 @@ app.post("/addTopic", (req,res) => {
     } catch (err) {
         console.error(err);
         return res.status(500).send({error:"Topic could not be added"});
+    }
+})
+
+app.get("/followers",
+    (req,res) => res.status(200).send({followers:TopicFollowerBrokerMap})
+)
+
+app.post("/setFollowers", (req,res) => {
+    try {
+        if (req.body.topic && req.body.followers && req.body.followers.length > 0) {
+            TopicFollowerBrokerMap[req.body.topic] = req.body.followers;
+            return res.status(200).send({message:"Followers set"});
+        } else {
+            return res.status(400).send({message:"Invalid request! Please provide topic and followers both"});
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({error:"Followers could not be set "+err});
+    }
+})
+
+app.post("/addFollower", (req,res) => {
+    try {
+        const topic = req.body.topic;
+        const follower = req.body.follower;
+        if (TopicFollowerBrokerMap[topic] === undefined) {
+            TopicFollowerBrokerMap[topic] = [follower];
+        } else {
+            TopicFollowerBrokerMap[topic].push(follower);
+        }
+        return res.status(200).send({message:"Follower added"});
+    } catch (err) {
+        console.error(err);
+        return res.status(400).send({error:"Follower could not be added "+err});
     }
 })
