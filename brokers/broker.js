@@ -31,7 +31,8 @@ server.listen(PORT, () => {
         console.log(result.data);
     }).catch((err) => {
         console.error(err);
-    });;
+        server.close();
+    })
 })
 
 io.on("connection", (socket) => {

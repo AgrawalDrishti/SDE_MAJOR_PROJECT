@@ -30,7 +30,7 @@ rl.question('How many topics do you want to make? ', (numTopics) => {
 
 rl.on('close', () => {
     topics.forEach((topic) => {
-        axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/addEntry`, {
+        axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/addTopic`, {
             topic: topic,
         }).then((result) => {
             console.log(topic, result.data);

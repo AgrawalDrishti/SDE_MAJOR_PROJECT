@@ -10,19 +10,27 @@ app.use(cors());
 
 const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 const ZOOKEEPER_HOST = process.env.ZOOKEEPER_HOST || 'http://localhost';
+const REPLICA_FACTOR = process.env.REPLICA_FACTOR || 2;
 
-const TopicBrokerMap = {};
+const TopicLeaderBrokerMap = {};
+const TopicFollowerBrokersMap = {};
 const mutex = new Mutex();
 var broker_i = 0;
 var brokers = [];
+
 app.get("/",
-    (req,res) => res.send({message:`Zookeeper running at ${ZOOKEEPER_PORT}`})
-)
-app.get("/getMapping",
-    (req,res) => res.send({mapping:TopicBrokerMap})
+    (req,res) => res.status(200).send({message:`Zookeeper running at ${ZOOKEEPER_PORT}`})
 )
 
-app.post("/addEntry", async (req,res) => {
+app.get("/getMapping",
+    (req,res) => res.status(200).send({mapping:TopicLeaderBrokerMap})
+)
+
+app.get("/getBrokers", 
+    (req,res) => res.status(200).send({brokers:brokers})
+)
+
+app.post("/addTopic", async (req,res) => {
     const topic = req.body.topic;
     const release = await mutex.acquire();
 
@@ -32,8 +40,10 @@ app.post("/addEntry", async (req,res) => {
         topic: topic
     }).then((result) => {
         if (result.data.message == "Topic added") {
-            TopicBrokerMap[topic] = brokers[broker_i]; 
+            TopicLeaderBrokerMap[topic] = brokers[broker_i];
+
             broker_i = (broker_i+1) % brokers.length;
+
             return res.send({message:"Entry added"});
         } else {
             console.log("Error adding topic to broker");
@@ -47,11 +57,11 @@ app.post("/addEntry", async (req,res) => {
     })
 })
 
-app.delete("/removeEntry", (req,res) => {
+app.delete("/removeTopic", (req,res) => {
     try {
         console.log("Removing topic:",req.body.topic);
-        if (TopicBrokerMap[req.body.topic]) {
-            delete TopicBrokerMap[req.body.topic];
+        if (TopicLeaderBrokerMap[req.body.topic]) {
+            delete TopicLeaderBrokerMap[req.body.topic];
             res.status(200).send({message:"Successfully removed the topic!"})
         } else {
             res.status(404).send({Error:"Topic not found!"});
