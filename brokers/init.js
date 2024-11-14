@@ -2,7 +2,7 @@ require('dotenv').config()
 const { exec } = require('child_process');
 
 
-const script_path = './brokers/broker.js';
+const script_path = './broker.js';
 const num_brokers = process.env.NUM_BROKERS || 2;
 const broker_port_start = process.env.BROKER_PORT_START || 3000;
 
