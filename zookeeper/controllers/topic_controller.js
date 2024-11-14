@@ -40,6 +40,17 @@ const add_topic_to_broker = async (req,res) => {
             .then((result_for_followers) => {
                 if (result_for_followers.status === 200){
                     TopicFollowerBrokersMap[topic] = follower_brokers;
+
+                    for(let follower_i = 0 ; follower_i < follower_brokers.length ; follower_i++){
+                        axios.post(follower_brokers[follower_i]+'/addTopic', {
+                            topic: topic,
+                        }).then((res) => {
+                            console.log(res.data.message," to the follower");
+                        }).catch((err) =>{
+                            console.error(err);
+                        })
+                    }
+
                     console.log("Topic and followers added to broker");
                 } else {
                     console.log("Error adding followers to broker");

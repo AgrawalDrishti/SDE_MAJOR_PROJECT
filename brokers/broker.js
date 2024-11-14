@@ -4,7 +4,9 @@ const axios = require('axios')
 const fh = require('./file-functions/file-handler');
 const cors = require('cors');
 const http = require("http")
-const { Server } = require("socket.io")
+const { Server } = require("socket.io");
+const { error } = require('console');
+const { Mutex } = require('async-mutex');
 
 const app = express()
 app.use(express.json())
@@ -21,19 +23,8 @@ const ZOOKEEPER_PORT = process.env.ZOOKEEPER_PORT || 8000;
 
 const topics = [];
 const TopicFollowerBrokerMap = {};
-
-server.listen(PORT, () => {
-    console.log(`Server listening at http://localhost:${PORT}`);
-    fh.create_message_directory(`${MESSAGE_DIRECTORY}/BROKER${PORT}`);
-    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/broker/add`, {
-        broker_url:`${BROKER_HOST}:${PORT}`
-    }).then((result) => {
-        console.log(result.data);
-    }).catch((err) => {
-        console.error(err);
-        server.close();
-    })
-})
+const MessagesToUpdate = {};
+const topicMutexMap = {};
 
 io.on("connection", (socket) => {
     console.log(`A client connected ${socket.id}`)
@@ -42,8 +33,17 @@ io.on("connection", (socket) => {
         console.log(`A client disconnected ${socket.id}`)
     })
     
-    socket.on("publish", (topic, message, callback) => {
+    socket.on("publish", async (topic, message, callback) => {
         fh.add_message_to_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${topic}.txt`, message);
+        if(MessagesToUpdate[topic]){
+            const release = await topicMutexMap[topic].acquire();
+            MessagesToUpdate[topic].push(message);
+            release();
+        }
+        else{
+            topicMutexMap[topic] = new Mutex();
+            MessagesToUpdate[topic] = [message];
+        }
         callback("Message published");
     })
 
@@ -81,6 +81,21 @@ app.post("/addTopic", (req,res) => {
     }
 })
 
+app.post("/updateTopicMessages" , (req,res)=>{
+    try {
+        if(req.body.topic && req.body.messages){
+            fh.add_message_to_file(`${MESSAGE_DIRECTORY}/BROKER${PORT}`, `${req.body.topic}.txt`, req.body.messages);
+            res.status(200).send({message: "success"});
+        }
+        else{
+            res.status(400).send({message : "failure"});
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send({Error : "Unable to update follower " + error});
+    }
+})
+
 app.get("/followers",
     (req,res) => res.status(200).send({followers:TopicFollowerBrokerMap})
 )
@@ -113,4 +128,38 @@ app.post("/addFollower", (req,res) => {
         console.error(err);
         return res.status(400).send({error:"Follower could not be added "+err});
     }
+})
+
+server.listen(PORT, () => {
+    console.log(`Server listening at http://localhost:${PORT}`);
+    fh.create_message_directory(`${MESSAGE_DIRECTORY}/BROKER${PORT}`);
+    axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/broker/add`, {
+        broker_url:`${BROKER_HOST}:${PORT}`
+    }).then((result) => {
+        console.log(result.data);
+    }).catch((err) => {
+        console.error(err);
+        server.close();
+    })
+
+    setInterval(async () => {
+        for(let t of Object.keys(MessagesToUpdate)){
+            
+            const release = await topicMutexMap[t].acquire();
+            const messages_to_write = MessagesToUpdate[t].join('\n');
+            MessagesToUpdate[t] = [];
+            release();
+
+            for(let follower_i of TopicFollowerBrokerMap[t]){
+                axios.post(`${follower_i}/updateTopicMessages` , {
+                    topic : t,
+                    messages: messages_to_write
+                }).then((res) => {
+                    console.log(res.data);
+                }).catch((error) => {
+                    console.error("Unable to update messages");
+                })
+            }
+        }
+    }, 5000);
 })
