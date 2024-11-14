@@ -30,7 +30,7 @@ rl.question('How many topics do you want to remove? ', (numTopics) => {
 
 rl.on('close', () => {
     topics.forEach((topic) => {
-        axios.delete(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/removeTopic`, {
+        axios.delete(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/topic/remove`, {
             data:{
                 topic: topic
             }
