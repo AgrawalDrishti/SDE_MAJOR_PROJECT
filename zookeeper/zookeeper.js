@@ -24,7 +24,7 @@ app.get("/getFollowers",
 )
 
 app.listen(ZOOKEEPER_PORT, () => {
-    global.REPLICA_FACTOR = process.env.REPLICA_FACTOR || 2;
+    global.REPLICATION_FACTOR = process.env.REPLICATION_FACTOR || 2;
 
     global.TopicLeaderBrokerMap = {};
     global.TopicFollowerBrokersMap = {};

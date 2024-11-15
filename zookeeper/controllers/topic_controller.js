@@ -32,7 +32,7 @@ const add_topic_to_broker = async (req,res) => {
 
             TopicLeaderBrokerMap[topic] = brokers[broker_i];
 
-            const follower_brokers = get_random_sample(brokers, [brokers[broker_i]], REPLICA_FACTOR-1);
+            const follower_brokers = get_random_sample(brokers, [brokers[broker_i]], REPLICATION_FACTOR-1);
             axios.post(`${brokers[broker_i]}/setFollowers`, {
                 topic: topic,
                 followers: follower_brokers
