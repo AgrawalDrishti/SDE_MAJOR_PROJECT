@@ -1,3 +1,4 @@
+require('dotenv').config()
 const { io } = require('socket.io-client')
 const axios = require('axios')
 const readline = require('readline')
@@ -31,9 +32,11 @@ function startPublishing(topic){
     const socket = io(mapping[topic]);
     socket.connect();
 
+    let i=0;
     setInterval(() => {
-        socket.emit('publish',topic,topic+getRandomString(10), (err, res) => logger(err,res));
-    }, 5000);
+        socket.emit('publish',topic,topic+i, (err, res) => logger(err,res));
+        i++;
+    }, 2000);
 
     socket.on('disconnect', async () => {
         console.log('Lost connection to broker');

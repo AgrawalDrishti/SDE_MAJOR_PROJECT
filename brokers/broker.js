@@ -38,11 +38,13 @@ io.on("connection", (socket) => {
         if(MessagesToUpdate[topic]){
             const release = await topicMutexMap[topic].acquire();
             MessagesToUpdate[topic].push(message);
+            console.log("Adding message",MessagesToUpdate[topic]);
             release();
         }
         else{
             topicMutexMap[topic] = new Mutex();
             MessagesToUpdate[topic] = [message];
+            console.log("First time:",MessagesToUpdate[topic]);
         }
         callback("Message published");
     })
@@ -144,12 +146,9 @@ server.listen(PORT, () => {
 
     setInterval(async () => {
         for(let t of Object.keys(MessagesToUpdate)){
-            
             const release = await topicMutexMap[t].acquire();
             const messages_to_write = MessagesToUpdate[t].join('\n');
-            MessagesToUpdate[t] = [];
-            release();
-
+            console.log(MessagesToUpdate[t]);
             for(let follower_i of TopicFollowerBrokerMap[t]){
                 axios.post(`${follower_i}/updateTopicMessages` , {
                     topic : t,
@@ -157,9 +156,12 @@ server.listen(PORT, () => {
                 }).then((res) => {
                     console.log(res.data);
                 }).catch((error) => {
-                    console.error("Unable to update messages");
+                    console.error("Unable to update messages"+error);
                 })
             }
+            console.log("Emptied messages");
+            MessagesToUpdate[t] = [];
+            release();
         }
-    }, 5000);
+    }, 10000);
 })
