@@ -32,10 +32,8 @@ function startPublishing(topic){
     const socket = io(mapping[topic]);
     socket.connect();
 
-    let i=0;
     setInterval(() => {
-        socket.emit('publish',topic,topic+i, (err, res) => logger(err,res));
-        i++;
+        socket.emit('publish',topic,topic+"-"+getRandomString(2), (err, res) => logger(err,res));
     }, 2000);
 
     socket.on('disconnect', async () => {

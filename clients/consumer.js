@@ -46,9 +46,14 @@ async function startConsuming(topic){
 
     socket.on('disconnect', async () => {
         console.log('Lost connection to broker');
-        const res = await axios.get(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/getBroker`);
-        mapping[topic] = res.data.broker;
-        startConsuming(topic);
+        try {
+            const res = await axios.post(`${ZOOKEEPER_HOST}:${ZOOKEEPER_PORT}/broker/ping`, {topic: topic});
+            mapping[topic] = res.data.broker_url;
+            startConsuming(topic);
+        } catch (err) {
+            console.error(err);
+            console.log("Unable to find leader broker!");
+        }
     });
 }
 
