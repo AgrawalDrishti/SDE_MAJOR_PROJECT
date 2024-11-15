@@ -1,14 +1,15 @@
-producers can publish to some topics
+producers can publish to topics they desire
 
-kafka-topics can be used to add topics, currently to a single broker
+topics can be added and removed using scripts in config/topics
 
-brokers are able to run in parallel and can serve for specific topics
+brokers are able to run in parallel and can serve for chosen topics
 
 consumers can consume the messages for the topics they need
 
+brokers will periodically update followers for maintaining consistency
 
 TO RUN:
 1. Initiate zookeeper process first
-2. Run init process for running all brokers
-3. Add topics to brokers using kafka-topics script
+2. Run brokers by providing port in arguments with node cmd
+3. Add topics to brokers using topics/add-topics script
 4. Initiate producer and consumer processes for publishing and reading data

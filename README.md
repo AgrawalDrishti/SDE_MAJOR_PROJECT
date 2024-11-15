@@ -1,8 +1,8 @@
-# Basic Implementation of **Apache Kafka**
+# Implementation of **Kafka**
 
-Apache Kafka is a distributed streaming platform used for building real-time data pipelines and streaming applications. It is designed to handle high throughput and low latency, making it ideal for processing large streams of data in real-time.
+Kafka is a distributed streaming platform used for building real-time data pipelines. It is designed to handle high throughput and low latency, making it ideal for processing large streams of data in real-time.
 
-This project aims at implementing a basic model of Kafka
+This project aims at implementing a model of Kafka and Adding Fault Tolerance which was not originally proposed by LinkedIn
 
 ## Key Features
 

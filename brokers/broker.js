@@ -148,7 +148,9 @@ server.listen(PORT, () => {
         for(let t of Object.keys(MessagesToUpdate)){
             const release = await topicMutexMap[t].acquire();
             const messages_to_write = MessagesToUpdate[t].join('\n');
-            console.log(MessagesToUpdate[t]);
+            if (messages_to_write === "") {
+                release(); continue;
+            }
             for(let follower_i of TopicFollowerBrokerMap[t]){
                 axios.post(`${follower_i}/updateTopicMessages` , {
                     topic : t,
@@ -159,7 +161,6 @@ server.listen(PORT, () => {
                     console.error("Unable to update messages"+error);
                 })
             }
-            console.log("Emptied messages");
             MessagesToUpdate[t] = [];
             release();
         }
